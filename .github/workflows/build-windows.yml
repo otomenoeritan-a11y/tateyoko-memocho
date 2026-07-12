@@ -47,5 +47,5 @@ jobs:
         with:
           name: tateyoko-memocho-windows-x64
           path: たてよこメモ帖_windows-x64.zip
-          if-no-files-found: err
+          if-no-files-found: error
           
