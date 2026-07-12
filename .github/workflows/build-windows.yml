@@ -1,0 +1,51 @@
+name: Build Windows app
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore application icon
+        shell: pwsh
+        run: |
+          $base64 = Get-Content "TateYokoMemocho/Assets/app.ico.base64" -Raw
+          [IO.File]::WriteAllBytes(
+            "TateYokoMemocho/Assets/app.ico",
+            [Convert]::FromBase64String($base64))
+
+      - name: Publish
+        run: >-
+          dotnet publish TateYokoMemocho/TateYokoMemocho.csproj
+          -c Release
+          -r win-x64
+          --self-contained false
+          -o publish
+
+      - name: Create portable ZIP
+        shell: pwsh
+        run: Compress-Archive -Path "publish/*" -DestinationPath "たてよこメモ帖_windows-x64.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tateyoko-memocho-windows-x64
+          path: たてよこメモ帖_windows-x64.zip
+          if-no-files-found: err
+          
