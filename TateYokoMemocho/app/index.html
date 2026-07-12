@@ -7,15 +7,15 @@
   <link rel="icon" href="app.ico">
   <style>
     :root {
-      --bg: #f6f3ee;
-      --panel: #fffaf2;
+      --bg: #ffffff;
+      --panel: #ffffff;
       --text: #222;
       --muted: #666;
-      --border: #d8cfc2;
+      --border: #d6d6d6;
       --button: #ffffff;
-      --button-hover: #f0e8dc;
-      --button-active: #eadcc8;
-      --editor-bg: #fffdf8;
+      --button-hover: #f2f2f2;
+      --button-active: #e9e9e9;
+      --editor-bg: #ffffff;
       --editor-text: #1f1f1f;
       --accent: #6b4f2a;
       --font-size: 20px;
@@ -26,14 +26,14 @@
     }
 
     body.theme-editor-dark {
-      --bg: #f6f3ee;
-      --panel: #fffaf2;
+      --bg: #ffffff;
+      --panel: #ffffff;
       --text: #222;
       --muted: #666;
-      --border: #d8cfc2;
+      --border: #d6d6d6;
       --button: #ffffff;
-      --button-hover: #f0e8dc;
-      --button-active: #eadcc8;
+      --button-hover: #f2f2f2;
+      --button-active: #e9e9e9;
       --editor-bg: #111111;
       --editor-text: #f2f2f2;
       --accent: #6b4f2a;
@@ -452,15 +452,9 @@
           <input id="fileInput" type="file" accept=".txt,text/plain">
           <button id="saveBtn" class="save-primary" type="button" title="上書き保存">保存</button>
           <button id="saveAsBtn" type="button" title="名前を付けて保存">別名保存</button>
-          <button id="copyBtn" type="button" title="全文コピー">コピー</button>
-          <button id="removeAsterisksBtn" class="cleanup-button" type="button" title="選択範囲、または全文から ** を削除">**削除</button>
         </div>
 
-      <details class="display-settings">
-        <summary>設定</summary>
-        <div class="toolbar">
-
-        <div class="control">
+        <div class="control theme-bar">
           <span>テーマ</span>
           <select id="themeSelect" title="表示テーマ">
             <option value="standard">標準</option>
@@ -468,6 +462,10 @@
             <option value="chalkboard">黒板</option>
           </select>
         </div>
+
+      <details class="display-settings">
+        <summary>設定</summary>
+        <div class="toolbar">
 
         <button id="boldBtn" type="button">文字を太く表示</button>
 
@@ -499,9 +497,7 @@
           <button class="heightBtn" type="button" data-height="wide">広</button>
           <button class="heightBtn" type="button" data-height="full">全高</button>
         </div>
-        <button id="topBtn" type="button" title="文章の先頭へ">先頭へ</button>
-        <button id="bottomBtn" type="button" title="文章の末尾へ">末尾へ</button>
-        <button id="clearBtn" type="button">本文をクリア</button>
+        <button id="removeAsterisksBtn" class="cleanup-button" type="button" title="選択範囲、または全文から ** を削除">**削除</button>
       </div>
       </details>
       </div>
@@ -528,11 +524,7 @@
     const openBtn = document.getElementById("openBtn");
     const saveBtn = document.getElementById("saveBtn");
     const saveAsBtn = document.getElementById("saveAsBtn");
-    const copyBtn = document.getElementById("copyBtn");
     const removeAsterisksBtn = document.getElementById("removeAsterisksBtn");
-    const clearBtn = document.getElementById("clearBtn");
-    const topBtn = document.getElementById("topBtn");
-    const bottomBtn = document.getElementById("bottomBtn");
     const verticalBtn = document.getElementById("verticalBtn");
     const horizontalBtn = document.getElementById("horizontalBtn");
     const themeSelect = document.getElementById("themeSelect");
@@ -551,6 +543,7 @@
     const fileName = document.getElementById("fileName");
     const heightControls = document.getElementById("heightControls");
     const heightButtons = document.querySelectorAll(".heightBtn");
+    const displaySettings = document.querySelector("details.display-settings");
 
     const STORAGE_KEY = "tateyoko-memocho-text";
     const SETTINGS_KEY = "tateyoko-memocho-settings";
@@ -903,18 +896,6 @@
     saveBtn.addEventListener("click", () => saveFile(false));
     saveAsBtn.addEventListener("click", () => saveFile(true));
 
-    copyBtn.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(editor.value);
-        setStatus("全文をコピーした。txt保存はまだなら、閉じる前に確認が出る。");
-      } catch (e) {
-        editor.focus();
-        editor.select();
-        document.execCommand("copy");
-        setStatus("全文を選択してコピーした。txt保存はまだなら、閉じる前に確認が出る。");
-      }
-    });
-
     removeAsterisksBtn.addEventListener("click", () => {
       const start = editor.selectionStart;
       const end = editor.selectionEnd;
@@ -941,61 +922,6 @@
       setStatus(hasSelection ? "選択した部分から ** を削除した。" : "全文から ** を削除した。");
       editor.focus();
     });
-
-    clearBtn.addEventListener("click", () => {
-      if (!editor.value) return;
-      const ok = confirm("本文をクリアする？ ブラウザ内の一時保存も消える。");
-      if (!ok) return;
-      editor.value = "";
-      localStorage.removeItem(STORAGE_KEY);
-      currentFileName = "新しいメモ.txt";
-      currentFileHandle = null;
-      markSaved();
-      fileName.textContent = "未保存";
-      updateStats();
-      setStatus("本文をクリアした。");
-      editor.focus();
-    });
-
-    function moveToTop() {
-      editor.focus();
-      editor.setSelectionRange(0, 0);
-
-      requestAnimationFrame(() => {
-        if (isVertical) {
-          // vertical-rlの開始位置は右端。Chrome/EdgeではscrollLeft=0が開始位置。
-          editor.scrollLeft = 0;
-          editor.scrollTop = 0;
-        } else {
-          editor.scrollTop = 0;
-          editor.scrollLeft = 0;
-        }
-      });
-
-      setStatus("先頭へ移動した。");
-    }
-
-    function moveToBottom() {
-      const end = editor.value.length;
-      editor.focus();
-      editor.setSelectionRange(end, end);
-
-      requestAnimationFrame(() => {
-        if (isVertical) {
-          // vertical-rlでは左方向が末尾。Chrome/Edgeでは負方向に大きく動かす。
-          editor.scrollLeft = -editor.scrollWidth;
-          editor.scrollTop = 0;
-        } else {
-          editor.scrollTop = editor.scrollHeight;
-          editor.scrollLeft = 0;
-        }
-      });
-
-      setStatus("末尾へ移動した。");
-    }
-
-    topBtn.addEventListener("click", moveToTop);
-    bottomBtn.addEventListener("click", moveToBottom);
 
     function selectWritingMode(vertical) {
       if (isVertical === vertical) {
@@ -1075,7 +1001,17 @@
       autosaveSoon();
     });
 
+    editor.addEventListener("pointerdown", () => {
+      displaySettings.open = false;
+    });
+
     window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && displaySettings.open) {
+        displaySettings.open = false;
+        editor.focus();
+        return;
+      }
+
       if (!(event.ctrlKey || event.metaKey)) return;
 
       const key = event.key.toLowerCase();
