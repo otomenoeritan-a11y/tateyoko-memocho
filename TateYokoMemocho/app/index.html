@@ -497,6 +497,7 @@
           <button class="heightBtn" type="button" data-height="wide">広</button>
           <button class="heightBtn" type="button" data-height="full">全高</button>
         </div>
+        <button id="restoreAutosaveBtn" type="button" title="前回終了時の一時保存を読み込む">前回の内容を復元</button>
         <button id="removeAsterisksBtn" class="cleanup-button" type="button" title="選択範囲、または全文から ** を削除">**削除</button>
       </div>
       </details>
@@ -524,6 +525,7 @@
     const openBtn = document.getElementById("openBtn");
     const saveBtn = document.getElementById("saveBtn");
     const saveAsBtn = document.getElementById("saveAsBtn");
+    const restoreAutosaveBtn = document.getElementById("restoreAutosaveBtn");
     const removeAsterisksBtn = document.getElementById("removeAsterisksBtn");
     const verticalBtn = document.getElementById("verticalBtn");
     const horizontalBtn = document.getElementById("horizontalBtn");
@@ -723,13 +725,31 @@
       }, 250);
     }
 
-    function loadAutosave() {
+    function updateRestoreButton() {
+      restoreAutosaveBtn.disabled = !localStorage.getItem(STORAGE_KEY);
+    }
+
+    function restoreAutosave() {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        editor.value = saved;
-        markUnsaved();
-        setStatus("前回の一時保存を復元しました。必要ならtxt保存しておくと安心です。");
+      if (!saved) {
+        setStatus("復元できる前回の内容はありません。");
+        updateRestoreButton();
+        return;
       }
+
+      if (!confirmDiscardChanges("前回の内容を復元しますか")) {
+        setStatus("復元を取り消しました。");
+        return;
+      }
+
+      editor.value = saved;
+      currentFileName = "復元したメモ.txt";
+      currentFileHandle = null;
+      updateStats();
+      markUnsaved();
+      displaySettings.open = false;
+      setStatus("前回の一時保存を復元しました。必要ならtxt保存してください。");
+      editor.focus();
     }
 
     function countReplacementChars(text) {
@@ -895,6 +915,7 @@
     openBtn.addEventListener("click", openFile);
     saveBtn.addEventListener("click", () => saveFile(false));
     saveAsBtn.addEventListener("click", () => saveFile(true));
+    restoreAutosaveBtn.addEventListener("click", restoreAutosave);
 
     removeAsterisksBtn.addEventListener("click", () => {
       const start = editor.selectionStart;
@@ -1028,7 +1049,9 @@
     });
 
     window.addEventListener("beforeunload", (event) => {
-      localStorage.setItem(STORAGE_KEY, editor.value);
+      if (hasUnsavedChanges) {
+        localStorage.setItem(STORAGE_KEY, editor.value);
+      }
 
       // 未保存の変更がある場合、ブラウザ標準の確認ダイアログを出す。
       // 現代ブラウザでは任意の文言は表示できず、ブラウザ側の定型文になる。
@@ -1041,8 +1064,11 @@
     loadSettings();
     encodingSelect.value = selectedEncoding;
     themeSelect.value = selectedTheme;
-    loadAutosave();
     updateStats();
+    updateRestoreButton();
+    setStatus(localStorage.getItem(STORAGE_KEY)
+      ? "新しいメモです。前回の内容は「設定」から復元できます。"
+      : "新しいメモです。");
     applyTheme();
     applyBold();
     applyWritingMode();

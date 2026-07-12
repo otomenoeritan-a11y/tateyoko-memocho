@@ -21,6 +21,7 @@ namespace TateYokoMemocho
         public EditorForm()
         {
             Text = "たてよこメモ帖";
+            BackColor = Color.White;
             MinimumSize = new Size(400, 360);
             StartPosition = FormStartPosition.Manual;
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
@@ -35,11 +36,11 @@ namespace TateYokoMemocho
             webView = new WebView2
             {
                 Dock = DockStyle.Fill,
-                DefaultBackgroundColor = Color.FromArgb(246, 243, 238)
+                DefaultBackgroundColor = Color.White
             };
             Controls.Add(webView);
 
-            Shown += async (_, __) => await InitializeEditorAsync();
+            Load += async (_, __) => await InitializeEditorAsync();
             FormClosing += (_, __) => SaveWindowState();
         }
 
@@ -134,4 +135,3 @@ namespace TateYokoMemocho
         }
     }
 }
-
