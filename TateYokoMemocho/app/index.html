@@ -1,0 +1,1115 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>たてよこメモ帖</title>
+  <link rel="icon" href="app.ico">
+  <style>
+    :root {
+      --bg: #f6f3ee;
+      --panel: #fffaf2;
+      --text: #222;
+      --muted: #666;
+      --border: #d8cfc2;
+      --button: #ffffff;
+      --button-hover: #f0e8dc;
+      --button-active: #eadcc8;
+      --editor-bg: #fffdf8;
+      --editor-text: #1f1f1f;
+      --accent: #6b4f2a;
+      --font-size: 20px;
+      --line-height: 1.9;
+      --editor-width: none;
+      --editor-height: 100%;
+      --editor-font-weight: 400;
+    }
+
+    body.theme-editor-dark {
+      --bg: #f6f3ee;
+      --panel: #fffaf2;
+      --text: #222;
+      --muted: #666;
+      --border: #d8cfc2;
+      --button: #ffffff;
+      --button-hover: #f0e8dc;
+      --button-active: #eadcc8;
+      --editor-bg: #111111;
+      --editor-text: #f2f2f2;
+      --accent: #6b4f2a;
+    }
+
+    body.theme-chalkboard {
+      --bg: #e9e4d8;
+      --panel: #f4eedf;
+      --text: #2b2b24;
+      --muted: #6f6a5e;
+      --border: #b9ad98;
+      --button: #fffaf0;
+      --button-hover: #ece1cc;
+      --button-active: #d8c7a8;
+      --editor-bg: #17352f;
+      --editor-text: #f3f0df;
+      --accent: #4f6f5f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .app {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 8px;
+      display: block;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .title-group {
+      min-width: 0;
+    }
+
+    .title {
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .subtitle {
+      display: none;
+    }
+
+    .primary-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .mode-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      padding: 2px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+    }
+
+    .mode-label {
+      display: none;
+    }
+
+    .mode-choice {
+      min-width: 68px;
+      padding: 6px 9px;
+      border-color: transparent;
+      background: transparent;
+      font-weight: 700;
+    }
+
+    .mode-choice + .mode-choice {
+      margin-left: 3px;
+    }
+
+    .mode-choice.active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+    }
+
+    .file-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .file-actions .save-primary {
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+
+    .cleanup-button {
+      border-color: #8a6840;
+      background: #fff7e8;
+      font-weight: 700;
+    }
+
+    details.display-settings {
+      position: relative;
+      width: auto;
+      margin: 0;
+      padding: 0;
+    }
+
+    details.display-settings summary {
+      width: fit-content;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--button);
+      color: var(--text);
+      padding: 5px 8px;
+      font-size: 13px;
+      font-weight: 600;
+      user-select: none;
+      list-style: none;
+    }
+
+    details.display-settings summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.display-settings[open] summary {
+      background: var(--button-active);
+    }
+
+    details.display-settings > .toolbar {
+      position: fixed;
+      z-index: 20;
+      top: 82px;
+      right: 8px;
+      width: min(520px, calc(100vw - 16px));
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--panel);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button, label.file-button, select {
+      border: 1px solid var(--border);
+      background: var(--button);
+      color: var(--text);
+      padding: 5px 8px;
+      border-radius: 7px;
+      font-size: 13px;
+      line-height: 1.2;
+    }
+
+    button, label.file-button {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    select {
+      cursor: pointer;
+      padding-right: 6px;
+    }
+
+    button:hover, label.file-button:hover, select:hover {
+      background: var(--button-hover);
+    }
+
+    button.active {
+      background: var(--button-active);
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .control {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .control input[type="range"] {
+      width: 92px;
+    }
+
+    .size-controls {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      border-left: 1px solid var(--border);
+      padding-left: 8px;
+      margin-left: 2px;
+    }
+
+    .size-label {
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .size-controls button {
+      padding: 5px 8px;
+      font-size: 13px;
+    }
+
+    .stats {
+      color: var(--muted);
+      font-size: 13px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      white-space: nowrap;
+    }
+
+    main {
+      flex: 1;
+      min-height: 0;
+      padding: 6px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      overflow: hidden;
+    }
+
+    #editor {
+      width: 100%;
+      max-width: var(--editor-width);
+      height: var(--editor-height);
+      max-height: 100%;
+      min-height: 120px;
+      resize: none;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--editor-bg);
+      color: var(--editor-text);
+      padding: 16px;
+      outline: none;
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+      font-weight: var(--editor-font-weight);
+      font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "Hiragino Mincho Pro", "Noto Serif JP", serif;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      transition: background 0.2s, color 0.2s, border 0.2s, max-width 0.18s ease, height 0.18s ease;
+    }
+
+    #editor.full-width {
+      max-width: none;
+    }
+
+    #editor.full-height {
+      height: 100%;
+    }
+
+    #editor.horizontal {
+      writing-mode: horizontal-tb;
+      white-space: pre-wrap;
+    }
+
+    #editor.vertical {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      white-space: pre-wrap;
+      overflow: auto;
+      line-height: var(--line-height);
+    }
+
+    #editor::placeholder {
+      color: var(--muted);
+      opacity: 0.75;
+    }
+
+    body.theme-editor-dark #editor::placeholder,
+    body.theme-chalkboard #editor::placeholder {
+      color: #b8b8b8;
+      opacity: 0.75;
+    }
+
+    .status {
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      padding: 4px 8px;
+      font-size: 12px;
+      min-height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .hint {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .filename {
+      white-space: nowrap;
+    }
+
+    .status-right {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      white-space: nowrap;
+    }
+
+    .compact-count {
+      color: var(--accent);
+    }
+
+    @media (max-width: 760px) {
+      .header-top {
+        display: flex;
+        flex-wrap: wrap;
+      }
+
+      .stats {
+        display: none;
+      }
+
+      .mode-control {
+        width: auto;
+      }
+
+      .mode-choice {
+        flex: none;
+      }
+
+      .size-controls {
+        border-left: 0;
+        padding-left: 0;
+        width: 100%;
+      }
+
+      main {
+        padding: 5px;
+      }
+
+      #editor {
+        padding: 12px;
+        border-radius: 8px;
+        max-width: none;
+        min-height: 100px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="header-top">
+        <div class="title-group">
+          <div class="title">たてよこメモ帖</div>
+          <div class="subtitle">勝手に書式を付けない、縦書き・横書きのメモ帳</div>
+        </div>
+
+        <div class="mode-control" role="group" aria-label="書き方">
+          <span class="mode-label">書き方</span>
+          <button id="verticalBtn" class="mode-choice" type="button" aria-pressed="false">縦書き</button>
+          <button id="horizontalBtn" class="mode-choice" type="button" aria-pressed="true">横書き</button>
+        </div>
+
+        <div class="stats">
+          <span id="charCount">文字数: 0</span>
+          <span id="charNoSpaceCount">空白除外: 0</span>
+          <span id="lineCount">行数: 1</span>
+          <span id="manuscriptCount">400字: 0枚</span>
+        </div>
+      </div>
+
+      <div class="primary-toolbar">
+        <div class="file-actions" aria-label="ファイル操作">
+          <button id="newBtn" type="button">新規</button>
+          <button id="openBtn" type="button">開く</button>
+          <input id="fileInput" type="file" accept=".txt,text/plain">
+          <button id="saveBtn" class="save-primary" type="button" title="上書き保存">保存</button>
+          <button id="saveAsBtn" type="button" title="名前を付けて保存">別名保存</button>
+          <button id="copyBtn" type="button" title="全文コピー">コピー</button>
+          <button id="removeAsterisksBtn" class="cleanup-button" type="button" title="選択範囲、または全文から ** を削除">**削除</button>
+        </div>
+
+      <details class="display-settings">
+        <summary>設定</summary>
+        <div class="toolbar">
+
+        <div class="control">
+          <span>テーマ</span>
+          <select id="themeSelect" title="表示テーマ">
+            <option value="standard">標準</option>
+            <option value="editor-dark">入力欄ダーク</option>
+            <option value="chalkboard">黒板</option>
+          </select>
+        </div>
+
+        <button id="boldBtn" type="button">文字を太く表示</button>
+
+        <div class="control">
+          <span>文字コード</span>
+          <select id="encodingSelect" title="txt読み込み時の文字コード">
+            <option value="auto">自動</option>
+            <option value="utf-8">UTF-8</option>
+            <option value="shift_jis">Shift_JIS</option>
+          </select>
+        </div>
+
+        <div class="control">
+          <span>文字</span>
+          <input id="fontSize" type="range" min="14" max="34" value="20">
+          <span id="fontSizeLabel">20px</span>
+        </div>
+
+        <div class="control">
+          <span>行間</span>
+          <input id="lineHeight" type="range" min="1.2" max="2.8" step="0.1" value="1.9">
+          <span id="lineHeightLabel">1.9</span>
+        </div>
+
+        <div id="heightControls" class="size-controls" aria-label="本文高さ">
+          <span class="size-label">本文高さ</span>
+          <button class="heightBtn" type="button" data-height="narrow">狭</button>
+          <button class="heightBtn" type="button" data-height="normal">標準</button>
+          <button class="heightBtn" type="button" data-height="wide">広</button>
+          <button class="heightBtn" type="button" data-height="full">全高</button>
+        </div>
+        <button id="topBtn" type="button" title="文章の先頭へ">先頭へ</button>
+        <button id="bottomBtn" type="button" title="文章の末尾へ">末尾へ</button>
+        <button id="clearBtn" type="button">本文をクリア</button>
+      </div>
+      </details>
+      </div>
+    </header>
+
+    <main>
+      <textarea id="editor" class="horizontal" spellcheck="false" placeholder="ここに文章を入力…"></textarea>
+    </main>
+
+    <div class="status">
+      <div class="hint" id="statusText">準備完了。本文はブラウザ内に自動で一時保存される。</div>
+      <div class="status-right">
+        <span class="compact-count" id="compactCount">0字</span>
+        <span class="filename" id="fileName">未保存</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const editor = document.getElementById("editor");
+    const fileInput = document.getElementById("fileInput");
+    const newBtn = document.getElementById("newBtn");
+    const openBtn = document.getElementById("openBtn");
+    const saveBtn = document.getElementById("saveBtn");
+    const saveAsBtn = document.getElementById("saveAsBtn");
+    const copyBtn = document.getElementById("copyBtn");
+    const removeAsterisksBtn = document.getElementById("removeAsterisksBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const topBtn = document.getElementById("topBtn");
+    const bottomBtn = document.getElementById("bottomBtn");
+    const verticalBtn = document.getElementById("verticalBtn");
+    const horizontalBtn = document.getElementById("horizontalBtn");
+    const themeSelect = document.getElementById("themeSelect");
+    const boldBtn = document.getElementById("boldBtn");
+    const encodingSelect = document.getElementById("encodingSelect");
+    const fontSize = document.getElementById("fontSize");
+    const lineHeight = document.getElementById("lineHeight");
+    const fontSizeLabel = document.getElementById("fontSizeLabel");
+    const lineHeightLabel = document.getElementById("lineHeightLabel");
+    const charCount = document.getElementById("charCount");
+    const charNoSpaceCount = document.getElementById("charNoSpaceCount");
+    const lineCount = document.getElementById("lineCount");
+    const manuscriptCount = document.getElementById("manuscriptCount");
+    const compactCount = document.getElementById("compactCount");
+    const statusText = document.getElementById("statusText");
+    const fileName = document.getElementById("fileName");
+    const heightControls = document.getElementById("heightControls");
+    const heightButtons = document.querySelectorAll(".heightBtn");
+
+    const STORAGE_KEY = "tateyoko-memocho-text";
+    const SETTINGS_KEY = "tateyoko-memocho-settings";
+
+    const HEIGHT_MAP = {
+      narrow: { label: "狭", value: "55%" },
+      normal: { label: "標準", value: "72%" },
+      wide: { label: "広", value: "88%" },
+      full: { label: "全高", value: "100%" }
+    };
+
+    const THEME_LABEL = {
+      standard: "標準",
+      "editor-dark": "入力欄ダーク",
+      chalkboard: "黒板"
+    };
+
+    let currentFileName = "新しいメモ.txt";
+    let currentFileHandle = null;
+    let isVertical = false;
+    let editorHeight = "full";
+    let selectedEncoding = "auto";
+    let selectedTheme = "standard";
+    let isBold = false;
+    let hasUnsavedChanges = false;
+    let saveTimer = null;
+
+    function loadSettings() {
+      try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (!raw) return;
+        const settings = JSON.parse(raw);
+
+        if (typeof settings.isVertical === "boolean") {
+          isVertical = settings.isVertical;
+        }
+
+        if (settings.editorHeight && HEIGHT_MAP[settings.editorHeight]) {
+          editorHeight = settings.editorHeight;
+        }
+
+        if (settings.selectedEncoding) {
+          selectedEncoding = settings.selectedEncoding;
+        }
+
+        if (settings.selectedTheme && THEME_LABEL[settings.selectedTheme]) {
+          selectedTheme = settings.selectedTheme;
+        } else if (settings.selectedTheme === "sepia") {
+          selectedTheme = "standard";
+        } else if (settings.dark) {
+          // 旧版のダーク設定が残っている場合の移行用
+          selectedTheme = "editor-dark";
+        }
+
+        if (typeof settings.isBold === "boolean") {
+          isBold = settings.isBold;
+        }
+
+        if (settings.fontSize) {
+          fontSize.value = settings.fontSize;
+          document.documentElement.style.setProperty("--font-size", settings.fontSize + "px");
+          fontSizeLabel.textContent = settings.fontSize + "px";
+        }
+
+        if (settings.lineHeight) {
+          lineHeight.value = settings.lineHeight;
+          document.documentElement.style.setProperty("--line-height", settings.lineHeight);
+          lineHeightLabel.textContent = settings.lineHeight;
+        }
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    function saveSettings() {
+      const settings = {
+        isVertical,
+        editorHeight,
+        selectedEncoding,
+        selectedTheme,
+        isBold,
+        fontSize: fontSize.value,
+        lineHeight: lineHeight.value
+      };
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    }
+
+    function updateSizeControlsVisibility() {
+      // 本文幅は常に全幅。縦書きのときだけ本文高さを調整できる。
+      heightControls.style.display = isVertical ? "flex" : "none";
+    }
+
+    function applyWritingMode() {
+      editor.classList.toggle("vertical", isVertical);
+      editor.classList.toggle("horizontal", !isVertical);
+      verticalBtn.classList.toggle("active", isVertical);
+      horizontalBtn.classList.toggle("active", !isVertical);
+      verticalBtn.setAttribute("aria-pressed", String(isVertical));
+      horizontalBtn.setAttribute("aria-pressed", String(!isVertical));
+      updateSizeControlsVisibility();
+      applyEditorWidth();
+      applyEditorHeight();
+    }
+
+    function applyEditorWidth() {
+      editor.classList.add("full-width");
+      document.documentElement.style.setProperty("--editor-width", "none");
+    }
+
+    function applyEditorHeight() {
+      // 横書き：本文高さは常に全高にする。
+      // 縦書き：本文高さを調整する。
+      if (!isVertical) {
+        editor.classList.add("full-height");
+        document.documentElement.style.setProperty("--editor-height", "100%");
+      } else {
+        const height = HEIGHT_MAP[editorHeight] || HEIGHT_MAP.full;
+        editor.classList.toggle("full-height", editorHeight === "full");
+        document.documentElement.style.setProperty("--editor-height", height.value);
+      }
+
+      heightButtons.forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.height === editorHeight);
+      });
+    }
+
+    function applyTheme() {
+      document.body.classList.remove("theme-editor-dark", "theme-chalkboard");
+
+      if (selectedTheme !== "standard") {
+        document.body.classList.add("theme-" + selectedTheme);
+      }
+
+      themeSelect.value = selectedTheme;
+    }
+
+    function applyBold() {
+      document.documentElement.style.setProperty("--editor-font-weight", isBold ? "700" : "400");
+      boldBtn.classList.toggle("active", isBold);
+    }
+
+    function updateStats() {
+      const text = editor.value;
+      const total = text.length;
+      const noSpace = text.replace(/\s/g, "").length;
+      const lines = text.length === 0 ? 1 : text.split(/\r\n|\r|\n/).length;
+      const sheets = total === 0 ? 0 : Math.ceil(total / 400);
+
+      charCount.textContent = `文字数: ${total.toLocaleString()}`;
+      charNoSpaceCount.textContent = `空白除外: ${noSpace.toLocaleString()}`;
+      lineCount.textContent = `行数: ${lines.toLocaleString()}`;
+      manuscriptCount.textContent = `400字: ${sheets.toLocaleString()}枚`;
+      compactCount.textContent = `${total.toLocaleString()}字`;
+    }
+
+    function setStatus(message) {
+      statusText.textContent = message;
+    }
+
+    function markUnsaved() {
+      hasUnsavedChanges = true;
+      fileName.textContent = currentFileName ? currentFileName + " *" : "未保存 *";
+      document.title = `* ${currentFileName || "新規メモ"} - たてよこメモ帖`;
+    }
+
+    function markSaved() {
+      hasUnsavedChanges = false;
+      fileName.textContent = currentFileName || "未保存";
+      document.title = `${currentFileName || "新規メモ"} - たてよこメモ帖`;
+    }
+
+    function autosaveSoon() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        localStorage.setItem(STORAGE_KEY, editor.value);
+        setStatus("一時保存済み。");
+      }, 250);
+    }
+
+    function loadAutosave() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        editor.value = saved;
+        markUnsaved();
+        setStatus("前回の一時保存を復元しました。必要ならtxt保存しておくと安心です。");
+      }
+    }
+
+    function countReplacementChars(text) {
+      const matches = text.match(/�/g);
+      return matches ? matches.length : 0;
+    }
+
+    function decodeBuffer(buffer, encoding) {
+      const decoder = new TextDecoder(encoding, { fatal: false });
+      return decoder.decode(buffer);
+    }
+
+    function decodeTextAuto(buffer) {
+      const utf8Text = decodeBuffer(buffer, "utf-8");
+      const sjisText = decodeBuffer(buffer, "shift_jis");
+
+      const utf8Bad = countReplacementChars(utf8Text);
+      const sjisBad = countReplacementChars(sjisText);
+
+      if (sjisBad < utf8Bad) {
+        return { text: sjisText, encoding: "Shift_JIS" };
+      }
+      return { text: utf8Text, encoding: "UTF-8" };
+    }
+
+    function confirmDiscardChanges(nextAction) {
+      if (hasUnsavedChanges) {
+        const ok = confirm(`現在の文章には、txt保存していない変更があります。${nextAction}？`);
+        return ok;
+      }
+      return true;
+    }
+
+    async function decodeFile(file) {
+      const buffer = await file.arrayBuffer();
+      if (encodingSelect.value === "shift_jis") {
+        return { text: decodeBuffer(buffer, "shift_jis"), encoding: "Shift_JIS" };
+      }
+      if (encodingSelect.value === "utf-8") {
+        return { text: decodeBuffer(buffer, "utf-8"), encoding: "UTF-8" };
+      }
+      return decodeTextAuto(buffer);
+    }
+
+    function applyLoadedFile(file, result, handle = null) {
+      editor.value = result.text;
+      currentFileName = file.name || "新しいメモ.txt";
+      currentFileHandle = handle;
+      localStorage.setItem(STORAGE_KEY, editor.value);
+      updateStats();
+      markSaved();
+      setStatus(`「${currentFileName}」を開いた。文字コード：${result.encoding}`);
+      editor.focus();
+    }
+
+    async function openFile() {
+      if (!confirmDiscardChanges("別のtxtを開く")) {
+        setStatus("ファイルを開く操作を取り消した。");
+        return;
+      }
+
+      if ("showOpenFilePicker" in window) {
+        try {
+          const [handle] = await window.showOpenFilePicker({
+            types: [{ description: "テキストファイル", accept: { "text/plain": [".txt"] } }],
+            multiple: false
+          });
+          const file = await handle.getFile();
+          const result = await decodeFile(file);
+          applyLoadedFile(file, result, handle);
+          return;
+        } catch (e) {
+          if (e && e.name === "AbortError") {
+            setStatus("ファイルを開く操作を取り消した。");
+            return;
+          }
+          console.warn(e);
+        }
+      }
+
+      fileInput.click();
+    }
+
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+
+      try {
+        const result = await decodeFile(file);
+        applyLoadedFile(file, result, null);
+      } catch (e) {
+        setStatus("読み込みに失敗した。");
+      } finally {
+        fileInput.value = "";
+      }
+    });
+
+    function downloadTextFallback() {
+      const text = editor.value;
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = currentFileName || "新しいメモ.txt";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      localStorage.setItem(STORAGE_KEY, text);
+      currentFileName = currentFileName || "新しいメモ.txt";
+      markSaved();
+      setStatus("txtを保存した。保存先はWindowsの設定に従う。");
+    }
+
+    async function saveFile(saveAs = false) {
+      try {
+        if ((saveAs || !currentFileHandle) && "showSaveFilePicker" in window) {
+          currentFileHandle = await window.showSaveFilePicker({
+            suggestedName: currentFileName || "新しいメモ.txt",
+            types: [{ description: "テキストファイル", accept: { "text/plain": [".txt"] } }]
+          });
+          currentFileName = currentFileHandle.name || currentFileName;
+        }
+
+        if (currentFileHandle) {
+          const writable = await currentFileHandle.createWritable();
+          await writable.write(editor.value);
+          await writable.close();
+          localStorage.setItem(STORAGE_KEY, editor.value);
+          markSaved();
+          setStatus(`「${currentFileName}」を保存した。`);
+          return;
+        }
+
+        downloadTextFallback();
+      } catch (e) {
+        if (e && e.name === "AbortError") {
+          setStatus("保存を取り消した。");
+        } else {
+          console.warn(e);
+          setStatus("保存に失敗した。もう一度試してください。");
+        }
+      }
+    }
+
+    function newDocument() {
+      if (!confirmDiscardChanges("新しいメモを作る")) {
+        setStatus("新規作成を取り消した。");
+        return;
+      }
+      editor.value = "";
+      currentFileName = "新しいメモ.txt";
+      currentFileHandle = null;
+      localStorage.removeItem(STORAGE_KEY);
+      updateStats();
+      markSaved();
+      fileName.textContent = "新規メモ";
+      setStatus("新しいメモを作成した。");
+      editor.focus();
+    }
+
+    newBtn.addEventListener("click", newDocument);
+    openBtn.addEventListener("click", openFile);
+    saveBtn.addEventListener("click", () => saveFile(false));
+    saveAsBtn.addEventListener("click", () => saveFile(true));
+
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(editor.value);
+        setStatus("全文をコピーした。txt保存はまだなら、閉じる前に確認が出る。");
+      } catch (e) {
+        editor.focus();
+        editor.select();
+        document.execCommand("copy");
+        setStatus("全文を選択してコピーした。txt保存はまだなら、閉じる前に確認が出る。");
+      }
+    });
+
+    removeAsterisksBtn.addEventListener("click", () => {
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const hasSelection = start !== end;
+      const source = hasSelection ? editor.value.slice(start, end) : editor.value;
+      const cleaned = source.replace(/\*\*/g, "");
+
+      if (source === cleaned) {
+        setStatus("削除できる ** は見つからなかった。");
+        editor.focus();
+        return;
+      }
+
+      if (hasSelection) {
+        editor.setRangeText(cleaned, start, end, "select");
+      } else {
+        editor.value = cleaned;
+        editor.setSelectionRange(0, 0);
+      }
+
+      updateStats();
+      markUnsaved();
+      autosaveSoon();
+      setStatus(hasSelection ? "選択した部分から ** を削除した。" : "全文から ** を削除した。");
+      editor.focus();
+    });
+
+    clearBtn.addEventListener("click", () => {
+      if (!editor.value) return;
+      const ok = confirm("本文をクリアする？ ブラウザ内の一時保存も消える。");
+      if (!ok) return;
+      editor.value = "";
+      localStorage.removeItem(STORAGE_KEY);
+      currentFileName = "新しいメモ.txt";
+      currentFileHandle = null;
+      markSaved();
+      fileName.textContent = "未保存";
+      updateStats();
+      setStatus("本文をクリアした。");
+      editor.focus();
+    });
+
+    function moveToTop() {
+      editor.focus();
+      editor.setSelectionRange(0, 0);
+
+      requestAnimationFrame(() => {
+        if (isVertical) {
+          // vertical-rlの開始位置は右端。Chrome/EdgeではscrollLeft=0が開始位置。
+          editor.scrollLeft = 0;
+          editor.scrollTop = 0;
+        } else {
+          editor.scrollTop = 0;
+          editor.scrollLeft = 0;
+        }
+      });
+
+      setStatus("先頭へ移動した。");
+    }
+
+    function moveToBottom() {
+      const end = editor.value.length;
+      editor.focus();
+      editor.setSelectionRange(end, end);
+
+      requestAnimationFrame(() => {
+        if (isVertical) {
+          // vertical-rlでは左方向が末尾。Chrome/Edgeでは負方向に大きく動かす。
+          editor.scrollLeft = -editor.scrollWidth;
+          editor.scrollTop = 0;
+        } else {
+          editor.scrollTop = editor.scrollHeight;
+          editor.scrollLeft = 0;
+        }
+      });
+
+      setStatus("末尾へ移動した。");
+    }
+
+    topBtn.addEventListener("click", moveToTop);
+    bottomBtn.addEventListener("click", moveToBottom);
+
+    function selectWritingMode(vertical) {
+      if (isVertical === vertical) {
+        editor.focus();
+        return;
+      }
+
+      isVertical = vertical;
+      applyWritingMode();
+      saveSettings();
+      setStatus(isVertical ? "縦書きに切り替えた。マウスホイールで横方向に送れる。" : "横書きに切り替えた。");
+      editor.focus();
+    }
+
+    verticalBtn.addEventListener("click", () => selectWritingMode(true));
+    horizontalBtn.addEventListener("click", () => selectWritingMode(false));
+
+    themeSelect.addEventListener("change", () => {
+      selectedTheme = themeSelect.value;
+      applyTheme();
+      saveSettings();
+      setStatus(`テーマを「${THEME_LABEL[selectedTheme]}」にした。`);
+      editor.focus();
+    });
+
+    boldBtn.addEventListener("click", () => {
+      isBold = !isBold;
+      applyBold();
+      saveSettings();
+      setStatus(isBold ? "太字モードにした。" : "太字モードを解除した。");
+      editor.focus();
+    });
+
+    encodingSelect.addEventListener("change", () => {
+      selectedEncoding = encodingSelect.value;
+      saveSettings();
+      const label = selectedEncoding === "auto" ? "自動" : selectedEncoding === "shift_jis" ? "Shift_JIS" : "UTF-8";
+      setStatus(`txt読み込みの文字コードを「${label}」にした。`);
+      editor.focus();
+    });
+
+    fontSize.addEventListener("input", () => {
+      document.documentElement.style.setProperty("--font-size", fontSize.value + "px");
+      fontSizeLabel.textContent = fontSize.value + "px";
+      saveSettings();
+    });
+
+    lineHeight.addEventListener("input", () => {
+      document.documentElement.style.setProperty("--line-height", lineHeight.value);
+      lineHeightLabel.textContent = lineHeight.value;
+      saveSettings();
+    });
+
+    heightButtons.forEach(button => {
+      button.addEventListener("click", () => {
+        editorHeight = button.dataset.height;
+        applyEditorHeight();
+        saveSettings();
+        const heightLabel = HEIGHT_MAP[editorHeight]?.label || "全高";
+        setStatus(`縦書き時の本文高さを「${heightLabel}」にした。上端は固定される。`);
+        editor.focus();
+      });
+    });
+
+    editor.addEventListener("wheel", (event) => {
+      if (!isVertical) return;
+
+      if (Math.abs(event.deltaY) >= Math.abs(event.deltaX)) {
+        event.preventDefault();
+        editor.scrollLeft -= event.deltaY;
+      }
+    }, { passive: false });
+
+    editor.addEventListener("input", () => {
+      updateStats();
+      markUnsaved();
+      autosaveSoon();
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (!(event.ctrlKey || event.metaKey)) return;
+
+      const key = event.key.toLowerCase();
+      if (key === "s") {
+        event.preventDefault();
+        saveFile(event.shiftKey);
+      } else if (key === "o") {
+        event.preventDefault();
+        openFile();
+      } else if (key === "n") {
+        event.preventDefault();
+        newDocument();
+      }
+    });
+
+    window.addEventListener("beforeunload", (event) => {
+      localStorage.setItem(STORAGE_KEY, editor.value);
+
+      // 未保存の変更がある場合、ブラウザ標準の確認ダイアログを出す。
+      // 現代ブラウザでは任意の文言は表示できず、ブラウザ側の定型文になる。
+      if (hasUnsavedChanges) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    });
+
+    loadSettings();
+    encodingSelect.value = selectedEncoding;
+    themeSelect.value = selectedTheme;
+    loadAutosave();
+    updateStats();
+    applyTheme();
+    applyBold();
+    applyWritingMode();
+  </script>
+</body>
+</html>
